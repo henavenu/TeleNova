@@ -1,0 +1,106 @@
+{
+  "router": {
+    "name": "Customer Intake", "agent_type": "router", "capability": "orchestration",
+    "purpose": "Front door of the Nova assistant: classifies each customer request (bill, services, SIM or port-out, offers, account recovery) and routes it to the right specialist agent.",
+    "domain": "Telecom Customer Care", "data_access": ["account_profile"],
+    "allowed_actions": ["classify_intent", "route_request"],
+    "prohibited_actions": ["change_service", "move_number", "issue_credit"],
+    "max_authority": "orchestrate", "escalation": "None (routing only)", "kill_switch": true, "hitl_mode": "none"
+  },
+  "billing_agent": {
+    "name": "Billing Agent", "agent_type": "llm", "capability": "billing execution",
+    "purpose": "Explains statements and applies goodwill or outage credits up to $50. Larger credits go to a billing supervisor.",
+    "domain": "Telecom Customer Care", "data_access": ["statements", "payment_history"],
+    "allowed_actions": ["read_statement", "issue_credit_up_to_50"],
+    "prohibited_actions": ["issue_credit_over_50", "change_plan", "waive_device_balance"],
+    "max_authority": "credit <= $50", "escalation": "Credits over $50 → billing supervisor", "kill_switch": true, "hitl_mode": "agent"
+  },
+  "provisioning_agent": {
+    "name": "Provisioning Agent", "agent_type": "llm", "capability": "service provisioning",
+    "purpose": "Adds and changes services, refunds charges for services billed after deactivation, and sets call forwarding. Third-party charges only with the customer's explicit consent.",
+    "domain": "Telecom Customer Care", "data_access": ["service_inventory", "statements"],
+    "allowed_actions": ["add_service_with_consent", "refund_billing_error", "set_call_forwarding"],
+    "prohibited_actions": ["add_third_party_charge_without_consent", "forward_to_premium_rate", "reactivate_without_request"],
+    "max_authority": "execute (services)", "escalation": "Refunds for deactivated services → billing-correction desk", "kill_switch": true, "hitl_mode": "agent"
+  },
+  "sim_porting_agent": {
+    "name": "SIM & Porting Agent", "agent_type": "llm", "capability": "number management",
+    "purpose": "Moves a number to a new SIM after secure authentication, and releases numbers to other carriers whose porting agent presents a passport TeleNova recognises. Acts across the trust boundary with other carriers, so it carries an agent passport.",
+    "domain": "Telecom Customer Care", "data_access": ["line_inventory", "account_security_signals", "carrier_registry"],
+    "allowed_actions": ["sim_swap_after_secure_auth", "port_out_to_recognised_carrier"],
+    "prohibited_actions": ["sim_swap_without_secure_auth", "port_out_unverified_counterparty", "disable_port_pin"],
+    "max_authority": "execute (passport-gated)", "escalation": "Takeover risk or unrecognised carrier → fraud desk", "kill_switch": true, "hitl_mode": "agent_human"
+  },
+  "retention_agent": {
+    "name": "Retention Agent", "agent_type": "llm", "capability": "offer execution",
+    "purpose": "Makes save offers to customers likely to leave, from the approved offer catalogue. Offers must not be keyed on protected or proxy attributes such as postcode.",
+    "domain": "Telecom Customer Care", "data_access": ["churn_score", "usage_summary", "offer_catalogue"],
+    "allowed_actions": ["make_catalogue_offer"],
+    "prohibited_actions": ["offer_keyed_on_proxy_attribute", "use_cpni_without_consent"],
+    "max_authority": "offer <= $300", "escalation": "Fairness flags → offer-engine review", "kill_switch": true, "hitl_mode": "by_design"
+  },
+  "account_recovery": {
+    "name": "Account Recovery", "agent_type": "router", "capability": "review orchestration",
+    "purpose": "Opens an account-recovery case when a customer reports a SIM swap or port-out they didn't request, freezes the line and convenes the Account Recovery Board.",
+    "domain": "Telecom Customer Care", "data_access": ["line_inventory", "port_history"],
+    "allowed_actions": ["freeze_line", "open_recovery_case", "handoff_to_agent"],
+    "prohibited_actions": ["restore_number_without_verification", "close_case"],
+    "max_authority": "orchestrate", "escalation": "Board deadlock → human review", "kill_switch": true, "hitl_mode": "agent"
+  },
+  "coordinator": {
+    "name": "Recovery Board Coordinator", "agent_type": "router", "capability": "review orchestration",
+    "purpose": "Polls the four board reviewers, tallies their votes and escalates an unresolved split to a human.",
+    "domain": "Telecom Customer Care", "data_access": ["recovery_case"],
+    "allowed_actions": ["poll_reviewers", "tally_votes", "request_policy_review"],
+    "prohibited_actions": ["restore_number", "override_policy_verdict"],
+    "max_authority": "orchestrate", "escalation": "Deadlock → Human review queue", "kill_switch": true, "hitl_mode": "agent"
+  },
+  "recovery_board": {
+    "name": "Account Recovery Board", "agent_type": "router", "capability": "escalation",
+    "purpose": "The board's escalation channel: hands a deadlocked recovery decision to a human with the votes and the precedence rule.",
+    "domain": "Telecom Customer Care", "data_access": ["recovery_case"],
+    "allowed_actions": ["escalate_to_human"],
+    "prohibited_actions": ["restore_number", "close_case"],
+    "max_authority": "advisory", "escalation": "Human review queue", "kill_switch": true, "hitl_mode": "agent_human"
+  },
+  "fraud_reviewer": {
+    "name": "Fraud Reviewer", "agent_type": "llm", "capability": "advisory only",
+    "purpose": "Weighs account-takeover signals on the disputed port-out and votes to UPHOLD or OVERTURN the freeze. Advisory only.",
+    "domain": "Telecom Customer Care", "data_access": ["account_security_signals", "port_history"],
+    "allowed_actions": ["review_takeover_signals", "submit_recommendation"],
+    "prohibited_actions": ["restore_number", "move_number"],
+    "max_authority": "advisory", "escalation": "Coordinator → Human review queue", "kill_switch": false, "hitl_mode": "by_design"
+  },
+  "retention_reviewer": {
+    "name": "Retention Reviewer", "agent_type": "llm", "capability": "advisory only",
+    "purpose": "Weighs the cost of losing a long-tenure customer while their line is frozen and votes UPHOLD or OVERTURN. Advisory only.",
+    "domain": "Telecom Customer Care", "data_access": ["account_profile", "churn_score"],
+    "allowed_actions": ["review_retention_impact", "submit_recommendation"],
+    "prohibited_actions": ["restore_number", "make_offer"],
+    "max_authority": "advisory", "escalation": "Coordinator → Human review queue", "kill_switch": false, "hitl_mode": "by_design"
+  },
+  "care_reviewer": {
+    "name": "Customer Care Reviewer", "agent_type": "llm", "capability": "advisory only",
+    "purpose": "Weighs the customer being left without service and locked out of 2FA, and votes UPHOLD or OVERTURN. Advisory only.",
+    "domain": "Telecom Customer Care", "data_access": ["account_profile", "line_inventory"],
+    "allowed_actions": ["review_service_impact", "submit_recommendation"],
+    "prohibited_actions": ["restore_number", "move_number"],
+    "max_authority": "advisory", "escalation": "Coordinator → Human review queue", "kill_switch": false, "hitl_mode": "by_design"
+  },
+  "compliance_reviewer": {
+    "name": "Compliance Reviewer", "agent_type": "llm", "capability": "advisory only",
+    "purpose": "Weighs FCC SIM-swap and port-out obligations (secure authentication, customer notice) and votes UPHOLD or OVERTURN. Advisory only.",
+    "domain": "Telecom Customer Care", "data_access": ["port_history", "notice_log"],
+    "allowed_actions": ["review_regulatory_obligations", "submit_recommendation"],
+    "prohibited_actions": ["restore_number", "move_number"],
+    "max_authority": "advisory", "escalation": "Coordinator → Human review queue", "kill_switch": false, "hitl_mode": "by_design"
+  },
+  "fallback": {
+    "name": "Help Desk", "agent_type": "llm", "capability": "conversational only",
+    "purpose": "Answers requests no specialist matches. Takes no actions and reads no account data.",
+    "domain": "Telecom Customer Care", "data_access": [],
+    "allowed_actions": ["answer_general_question"],
+    "prohibited_actions": ["change_service", "move_number", "issue_credit"],
+    "max_authority": "none", "escalation": "None (no actions)", "kill_switch": true, "hitl_mode": "none"
+  }
+}

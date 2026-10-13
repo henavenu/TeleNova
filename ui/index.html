@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeleNova</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --deep: #0B2F2C;  --deep-2: #12403B; --lime: #C9F05B; --teal: #0E8A6E; --teal-ink: #0B6F59;
+  --sky: #7FD4EF;   --mint: #EEF6F3;   --mint-2: #E2F0EB; --card: #FFFFFF; --line: #D6E6E0;
+  --ink: #0F2A27;   --muted: #4D6661;  --amber-bg: #FDF3DC; --amber: #7A5A00;
+  --ok: #0E8A6E; --warn: #B07D00; --hold: #6A3D9A; --bad: #C0392B;
+  --font: "DM Sans", -apple-system, "Segoe UI", sans-serif; --mono: "DM Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #FAFBF9; color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+a { color: inherit; }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.shell { max-width: 1240px; margin: 24px auto; padding-inline: 16px; }
+.site { border-radius: 18px; overflow: hidden; background: var(--mint); box-shadow: 0 1px 2px rgba(11,47,44,.08); }
+
+/* header + hero */
+.top { background: var(--deep); color: #fff; padding: 22px 36px 48px; }
+.nav { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 24px; letter-spacing: -.3px; }
+.logo i { width: 18px; height: 18px; border: 3px solid var(--lime); display: inline-block; }
+.links { display: flex; gap: 22px; flex-wrap: wrap; margin-left: auto; margin-right: auto; color: #DDEBE7; font-weight: 500; }
+.links a { text-decoration: none; }
+.links a:hover { color: #fff; }
+.signin { border: 1.5px solid var(--teal); background: transparent; color: #fff; border-radius: 8px; padding: 7px 16px; font-weight: 600; }
+.signin.on { border-color: var(--lime); }
+.hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; margin-top: 40px; align-items: center; }
+.eyebrow { color: var(--sky); font-weight: 600; margin: 0 0 8px; }
+.hero h1 { font-size: clamp(30px, 4.2vw, 52px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -.8px; }
+.hero p.lede { color: #DDEBE7; font-size: 18px; max-width: 34ch; margin: 0 0 22px; }
+.addr { display: flex; gap: 12px; flex-wrap: wrap; }
+.addr input { flex: 1 1 220px; min-width: 0; border: 0; border-radius: 10px; padding: 14px 16px; font: inherit; font-size: 16px; }
+.cta { background: var(--lime); color: var(--deep); border: 0; border-radius: 10px; padding: 14px 22px; font-weight: 700; font-size: 16px; }
+.speed { background: var(--deep-2); border-radius: 16px; padding: 22px 26px; }
+.speed .k { color: #CFE3DE; font-weight: 500; }
+.speed .v { font-size: 44px; font-weight: 700; margin: 4px 0 10px; }
+.speed .v small { font-size: 20px; font-weight: 500; color: #CFE3DE; margin-left: 6px; }
+.bar { height: 14px; background: #0B2F2C; border-radius: 99px; overflow: hidden; }
+.bar b { display: block; width: 92%; height: 100%; background: var(--sky); border-radius: 99px; }
+.speed .note { color: #CFE3DE; margin-top: 12px; }
+
+/* plans + promises */
+.body { padding: 34px 36px 8px; }
+h2 { font-size: 26px; margin: 0; letter-spacing: -.3px; }
+.sub { color: var(--muted); margin: 2px 0 18px; }
+.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.plan { background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 22px; }
+.plan.pop { border: 2.5px solid var(--teal); }
+.plan .pn { color: var(--teal-ink); font-weight: 600; }
+.plan .pp { font-size: 34px; font-weight: 700; margin: 4px 0; }
+.plan .pp small { font-size: 16px; font-weight: 500; color: var(--muted); }
+.plan .pf { color: var(--muted); margin: 0 0 16px; }
+.plan button { width: 100%; border: 1.5px solid var(--teal); background: #fff; color: var(--teal-ink); border-radius: 8px; padding: 10px; font-weight: 600; }
+.plan.pop button { background: var(--lime); border-color: var(--lime); color: var(--deep); }
+.promises { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 30px 0 34px; }
+.promise i { width: 22px; height: 22px; border: 2.5px solid var(--teal); display: block; margin-bottom: 10px; }
+.promise b { display: block; font-size: 17px; }
+.promise span { color: var(--muted); }
+
+/* help: try-Nova + chat */
+.help { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 28px; align-items: start; padding-bottom: 34px; }
+.help h2 + p { color: var(--muted); font-size: 16px; max-width: 46ch; margin: 8px 0 18px; }
+.try { background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.try h3, .trail h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; font-weight: 700; }
+.group { margin-bottom: 12px; }
+.group .gk { font-size: 13px; font-weight: 700; color: var(--teal-ink); margin-bottom: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--mint); color: var(--ink); border-radius: 99px; padding: 5px 11px; font-size: 13px; text-align: left; }
+.chip:hover { border-color: var(--teal); background: #fff; }
+.chip:disabled { opacity: .5; cursor: not-allowed; }
+.try .foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+.linkbtn { background: none; border: 0; color: var(--teal-ink); font-weight: 600; padding: 0; text-decoration: underline; }
+
+.nova { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; min-height: 520px; }
+.nova header { background: var(--deep); color: #fff; padding: 14px 18px; display: flex; align-items: center; gap: 10px; }
+.nova header i { width: 16px; height: 16px; border: 2.5px solid var(--lime); }
+.nova header b { font-size: 17px; }
+.nova header .who { margin-left: auto; color: #CFE3DE; font-size: 13px; }
+.secure { background: var(--lime); color: var(--deep); border-radius: 99px; padding: 3px 12px; font-size: 13px; font-weight: 700; }
+.msgs { flex: 1; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 560px; }
+.bub { max-width: 86%; padding: 11px 15px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bub.me { align-self: flex-end; background: var(--teal-ink); color: #fff; border-bottom-right-radius: 4px; }
+.bub.nv { align-self: flex-start; background: var(--mint-2); border-bottom-left-radius: 4px; }
+.meta { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; max-width: 92%; }
+.notice { background: var(--amber-bg); color: var(--amber); border-radius: 10px; padding: 7px 12px; font-size: 14px; display: inline-flex; gap: 8px; align-items: center; }
+.notice i { width: 13px; height: 13px; border: 2px solid var(--amber); display: inline-block; }
+.v { font: 600 11.5px var(--mono); letter-spacing: .02em; padding: 3px 8px; border-radius: 6px; color: #fff; }
+.v.PERMISSIVE { background: var(--ok); } .v.NORMATIVE { background: var(--warn); } .v.HITL { background: var(--hold); } .v.COERCIVE { background: var(--bad); }
+.agent { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; background: #fff; }
+.adv { font-size: 13px; color: var(--amber); background: var(--amber-bg); border-radius: 8px; padding: 6px 10px; }
+.typing { align-self: flex-start; color: var(--muted); font-size: 13px; }
+.compose { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+.compose input { flex: 1; min-width: 0; border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 13px; font: inherit; }
+.compose button { background: var(--teal-ink); color: #fff; border: 0; border-radius: 10px; padding: 0 18px; font-weight: 600; }
+.compose button:disabled, .compose input:disabled { opacity: .55; }
+
+.trail { background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-top: 16px; }
+.trail .hint { color: var(--muted); font-size: 13px; margin: -4px 0 8px; }
+.trail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+.trail li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 13px; border-bottom: 1px solid var(--mint-2); padding-bottom: 6px; }
+.trail .who2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trail .who2 small { color: var(--muted); font-family: var(--mono); }
+.trail .fl { color: var(--bad); font-family: var(--mono); font-size: 11.5px; }
+.trail .t { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+.empty { color: var(--muted); font-size: 13px; }
+
+.bottom { background: var(--deep); color: #DDEBE7; padding: 18px 36px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.bottom nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.bottom a { text-decoration: none; } .bottom a:hover { color: #fff; }
+
+/* sign-in */
+dialog { border: 0; border-radius: 16px; padding: 0; width: min(380px, calc(100% - 32px)); box-shadow: 0 20px 60px rgba(11,47,44,.3); }
+dialog::backdrop { background: rgba(11,47,44,.45); }
+.dlg { padding: 24px; }
+.dlg h3 { margin: 0 0 4px; font-size: 20px; }
+.dlg p { color: var(--muted); margin: 0 0 16px; font-size: 14px; }
+.dlg label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; }
+.dlg input { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; }
+.dlg .row { display: flex; gap: 10px; margin-top: 18px; }
+.dlg .row button { flex: 1; border-radius: 10px; padding: 11px; font-weight: 700; border: 0; }
+.dlg .go { background: var(--lime); color: var(--deep); } .dlg .no { background: var(--mint); color: var(--ink); }
+.err { color: var(--bad); font-size: 13px; min-height: 18px; margin-top: 8px; }
+
+@media (max-width: 900px) {
+  .hero, .help { grid-template-columns: 1fr; }
+  .plans, .promises { grid-template-columns: 1fr; }
+  .top { padding: 18px 20px 32px; } .body { padding: 26px 20px 4px; } .bottom { padding: 16px 20px; }
+  .links { margin: 0; order: 3; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="site">
+  <div class="top">
+    <div class="nav">
+      <div class="logo"><i aria-hidden="true"></i>TeleNova</div>
+      <nav class="links" aria-label="Main">
+        <a href="#plans">Home internet</a><a href="#plans">Mobile</a><a href="#plans">Business</a><a href="#help">Support</a>
+      </nav>
+      <button class="signin" id="signin" type="button">Sign in</button>
+    </div>
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Full fiber, no data cap</p>
+        <h1>Internet that keeps up</h1>
+        <p class="lede">Up to 2 Gbps fiber at home and unlimited 5G on the go. One bill, no lock-in, and no surprise charges.</p>
+        <div class="addr">
+          <input id="addr" type="text" placeholder="Enter your address" aria-label="Your address">
+          <button class="cta" type="button" id="check">Check availability</button>
+        </div>
+      </div>
+      <div class="speed" aria-label="Live speed at home">
+        <div class="k">Live speed at home</div>
+        <div class="v">1.9<small>Gbps</small></div>
+        <div class="bar"><b></b></div>
+        <div class="note">Upload matches download</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <h2 id="plans">Pick a plan</h2>
+    <p class="sub">Switch or cancel any time.</p>
+    <div class="plans">
+      <div class="plan"><div class="pn">Fiber 500</div><div class="pp">$45<small>/mo</small></div>
+        <p class="pf">500 Mbps<br>Wi-Fi router included</p><button type="button">Choose</button></div>
+      <div class="plan pop"><div class="pn">Fiber 2 Gig · most popular</div><div class="pp">$70<small>/mo</small></div>
+        <p class="pf">2 Gbps<br>Whole-home Wi-Fi</p><button type="button">Choose</button></div>
+      <div class="plan"><div class="pn">Add mobile</div><div class="pp">+$25<small>/line</small></div>
+        <p class="pf">Unlimited 5G data<br>With any fiber plan</p><button type="button">Choose</button></div>
+    </div>
+    <div class="promises">
+      <div class="promise"><i aria-hidden="true"></i><b>Lower-energy network</b><span>Fiber uses less power than cable</span></div>
+      <div class="promise"><i aria-hidden="true"></i><b>No surprise charges</b><span>Add-ons only with your OK</span></div>
+      <div class="promise"><i aria-hidden="true"></i><b>Your number stays yours</b><span>Verified before any SIM change</span></div>
+    </div>
+
+    <div class="help" id="help">
+      <div>
+        <h2>Help, any time</h2>
+        <p>Ask Nova about bills, plans, SIMs and moving a number. Sensitive changes always get an extra check, and a person steps in when it matters.</p>
+        <div class="try" id="try">
+          <h3>Try Nova</h3>
+          <div class="group"><div class="gk">Your bill</div><div class="chips">
+            <button class="chip" type="button" data-q="Explain my bill">Explain my bill</button>
+            <button class="chip" type="button" data-q="Credit me $25 for Saturday's outage">$25 outage credit</button>
+            <button class="chip" type="button" data-q="Credit me $400 for the outage">$400 credit</button>
+          </div></div>
+          <div class="group"><div class="gk">Services</div><div class="chips">
+            <button class="chip" type="button" data-q="Why am I still charged for Home Internet? I cancelled it in August.">Still charged for Home Internet</button>
+            <button class="chip" type="button" data-q="Apply the partner bundle offers to my account">Apply partner offers</button>
+            <button class="chip" type="button" data-q="Forward my calls to +882 1645 7721 while I travel">Forward calls to +882…</button>
+          </div></div>
+          <div class="group"><div class="gk">Your number</div><div class="chips">
+            <button class="chip" type="button" data-q="Can you move my number to a new SIM?">Move my number to a new SIM</button>
+            <button class="chip" type="button" data-q="I lost my phone and can't get the code — move my number to a new SIM now">Lost phone, no code</button>
+            <button class="chip" type="button" data-q="I verified with the code sent to my email — activate my number on my new iPhone eSIM">Verified by email — new iPhone</button>
+            <button class="chip" type="button" data-q="Port my number 404-555-0187 to Northwind Mobile">Port to Northwind (try 3×)</button>
+            <button class="chip" type="button" data-q="Port my number to QuickTel Wireless">Port to QuickTel</button>
+          </div></div>
+          <div class="group"><div class="gk">Offers &amp; recovery</div><div class="chips">
+            <button class="chip" type="button" data-q="I'm thinking of switching to another carrier — what can you offer?">Thinking of switching</button>
+            <button class="chip" type="button" data-q="Someone ported my number without my permission — I didn't request this!">My number was ported without me</button>
+          </div></div>
+          <div class="foot">
+            <button class="linkbtn" type="button" id="reset">Reset demo</button>
+            <a class="linkbtn" href="/passports">Agent passports ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <section class="nova" aria-label="Nova assistant">
+          <header><i aria-hidden="true"></i><b>Nova assistant</b><span class="who" id="who">Not signed in</span><span class="secure">Secure</span></header>
+          <div class="msgs" id="msgs" aria-live="polite">
+            <div class="bub nv">Hi, I'm Nova. Sign in and I can help with your bill, services, SIM changes and moving your number.</div>
+          </div>
+          <form class="compose" id="compose">
+            <input id="input" type="text" placeholder="Sign in to chat with Nova" aria-label="Message Nova" disabled>
+            <button id="send" type="submit" disabled>Send</button>
+          </form>
+        </section>
+        <section class="trail" aria-label="Trust activity">
+          <h3>Trust activity</h3>
+          <p class="hint">Every agent action, as recorded by the RAI Trust platform for this session.</p>
+          <ol id="trail"><li class="empty">Nothing yet — ask Nova something.</li></ol>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bottom">
+    <span>TeleNova · fictional carrier for demonstration</span>
+    <nav><a href="#help">Privacy</a><a href="#help">Accessibility</a><a href="#help">Bill help</a><a href="/passports">Agent passports</a></nav>
+  </footer>
+</div>
+</div>
+
+<dialog id="dlg">
+  <form class="dlg" id="loginform" method="dialog">
+    <h3>Sign in to TeleNova</h3>
+    <p>Demo account: <b>jordan.ellis</b> · PIN <b>1234</b></p>
+    <label for="u">Username</label><input id="u" value="jordan.ellis" autocomplete="username">
+    <label for="p">PIN</label><input id="p" type="password" value="1234" autocomplete="current-password">
+    <div class="err" id="err"></div>
+    <div class="row"><button class="no" type="button" id="cancel">Cancel</button><button class="go" type="submit">Sign in</button></div>
+  </form>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let SID = null, BUSY = false, POLL = null;
+
+function setEnabled(on) {
+  $('#input').disabled = !on; $('#send').disabled = !on;
+  document.querySelectorAll('.chip').forEach(b => b.disabled = !on);
+  $('#input').placeholder = on ? 'Ask Nova anything…' : 'Sign in to chat with Nova';
+}
+function add(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#msgs').appendChild(d); $('#msgs').scrollTop = 1e9; return d; }
+function bubble(who, text) { return add('bub ' + who, esc(text)); }
+function meta(r) {
+  const parts = [`<span class="v ${esc(r.verdict)}">${esc(r.verdict)}</span>`]
+    .concat((r.agent_chain || []).map(a => `<span class="agent">${esc(a)}</span>`));
+  add('meta', parts.join(''));
+  if (r.notice) add('meta', `<span class="notice"><i aria-hidden="true"></i>${esc(r.notice)}</span>`);
+  (r.advisories || []).forEach(a => add('meta', `<span class="adv">⚠ ${esc(a)}</span>`));
+}
+
+async function login(ev) {
+  ev.preventDefault();
+  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: $('#u').value, pin: $('#p').value }) });
+  if (!r.ok) { $('#err').textContent = 'That username or PIN is wrong. Use the demo account above.'; return; }
+  const d = await r.json(); SID = d.session_id;
+  $('#dlg').close(); $('#signin').textContent = d.customer.name; $('#signin').classList.add('on');
+  $('#who').textContent = d.customer.account_number; setEnabled(true);
+  bubble('nv', `Welcome back, ${d.customer.name.split(' ')[0]}. What can I help you with?`);
+  refreshTrail();
+}
+
+async function send(text) {
+  if (!SID || BUSY || !text.trim()) return;
+  BUSY = true; setEnabled(false);
+  bubble('me', text); const t = add('typing', 'Nova is working on it…');
+  try {
+    const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, session_id: SID }) });
+    const d = await r.json(); t.remove();
+    if (!r.ok) { bubble('nv', 'Something went wrong on our side. Please try again.'); }
+    else { bubble('nv', d.reply); meta(d); if (d.hitl_pending) waitForReview(); }
+  } catch (e) { t.remove(); bubble('nv', 'I couldn’t reach TeleNova just now. Please try again.'); }
+  BUSY = false; if (!POLL) setEnabled(true); refreshTrail();
+}
+
+function waitForReview() {
+  setEnabled(false);
+  const w = add('typing', 'Waiting for a TeleNova specialist (Human Review)…');
+  POLL = setInterval(async () => {
+    try {
+      const d = await (await fetch('/api/hitl/status/' + SID)).json();
+      if (d.status === 'resolved') {
+        clearInterval(POLL); POLL = null; w.remove();
+        bubble('nv', d.reply);
+        add('meta', `<span class="v ${d.decision === 'approved' ? 'PERMISSIVE' : 'COERCIVE'}">${esc(d.decision.toUpperCase())}</span><span class="agent">${esc(d.reviewer)}</span>`);
+        setEnabled(true); refreshTrail();
+      }
+    } catch (e) { /* keep polling */ }
+  }, 2500);
+}
+
+async function refreshTrail() {
+  if (!SID) return;
+  try {
+    const d = await (await fetch('/api/trail/' + SID)).json();
+    const ev = d.events || [];
+    $('#trail').innerHTML = ev.length ? ev.slice(0, 30).map(e => `<li>
+      <span class="v ${esc(e.verdict)}">${esc(e.verdict)}</span>
+      <span class="who2">${esc(e.agent || e.role)} <small>${esc(e.tool || e.role)}</small>${e.flagged && e.flagged.length ? `<br><span class="fl">${esc(e.flagged.join(', '))}</span>` : ''}</span>
+      <span class="t">${esc((e.time || '').slice(11, 19))}</span></li>`).join('')
+      : '<li class="empty">Nothing yet — ask Nova something.</li>';
+  } catch (e) { /* trail is best-effort */ }
+}
+
+async function resetDemo() {
+  if (POLL) { clearInterval(POLL); POLL = null; }
+  await fetch('/api/reset', { method: 'POST' });
+  $('#msgs').innerHTML = '';
+  if (SID) {
+    const d = await (await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'jordan.ellis', pin: '1234' }) })).json();
+    SID = d.session_id; setEnabled(true);
+    bubble('nv', 'Demo reset. Fresh session — what can I help you with?');
+  }
+  $('#trail').innerHTML = '<li class="empty">Nothing yet — ask Nova something.</li>';
+}
+
+$('#signin').addEventListener('click', () => { if (!SID) { $('#err').textContent = ''; $('#dlg').showModal(); } });
+$('#cancel').addEventListener('click', () => $('#dlg').close());
+$('#loginform').addEventListener('submit', login);
+$('#compose').addEventListener('submit', e => { e.preventDefault(); const v = $('#input').value; $('#input').value = ''; send(v); });
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => send(b.dataset.q)));
+$('#reset').addEventListener('click', resetDemo);
+$('#check').addEventListener('click', () => { $('#addr').value = $('#addr').value || 'Fiber 2 Gig is available at your address'; });
+setEnabled(false);
+</script>
+</body>
+</html>

@@ -98,6 +98,7 @@ h2 { font-size: 26px; margin: 0; letter-spacing: -.3px; }
 .agent { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; background: #fff; }
 .adv { font-size: 13px; color: var(--amber); background: var(--amber-bg); border-radius: 8px; padding: 6px 10px; }
 .typing { align-self: flex-start; color: var(--muted); font-size: 13px; }
+.review-link { margin-left: 8px; font-weight: 600; color: var(--teal-ink); text-decoration: none; border-bottom: 1px dashed currentColor; }
 .compose { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
 .compose input { flex: 1; min-width: 0; border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 13px; font: inherit; }
 .compose button { background: var(--teal-ink); color: #fff; border: 0; border-radius: 10px; padding: 0 18px; font-weight: 600; }
@@ -260,8 +261,15 @@ dialog::backdrop { background: rgba(11,47,44,.45); }
 
 <script>
 const $ = s => document.querySelector(s);
+// Customer-facing verdict labels. The Trust platform's own terms (PERMISSIVE / NORMATIVE /
+// COERCIVE) stay on the platform dashboard; classes still key on the platform verdict.
+const LABEL = { PERMISSIVE: 'PASS', NORMATIVE: 'WARN', COERCIVE: 'BLOCK', HITL: 'REVIEW', APPROVED: 'APPROVED', REJECTED: 'DECLINED' };
+const lbl = v => LABEL[String(v || '').toUpperCase()] || String(v || '');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let SID = null, BUSY = false, POLL = null;
+// Human Review lives on the Trust dashboard: the local gateway (:3080) or GCP (TRUST_DASHBOARD_URL).
+let REVIEW_URL = 'http://127.0.0.1:3080/ui/dashboard?goto=hitl';
+fetch('/api/trust-links').then(r => r.json()).then(d => { if (d.review_url) REVIEW_URL = d.review_url; }).catch(() => {});
 
 function setEnabled(on) {
   $('#input').disabled = !on; $('#send').disabled = !on;
@@ -271,7 +279,7 @@ function setEnabled(on) {
 function add(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#msgs').appendChild(d); $('#msgs').scrollTop = 1e9; return d; }
 function bubble(who, text) { return add('bub ' + who, esc(text)); }
 function meta(r) {
-  const parts = [`<span class="v ${esc(r.verdict)}">${esc(r.verdict)}</span>`]
+  const parts = [`<span class="v ${esc(r.verdict)}">${esc(lbl(r.verdict))}</span>`]
     .concat((r.agent_chain || []).map(a => `<span class="agent">${esc(a)}</span>`));
   add('meta', parts.join(''));
   if (r.notice) add('meta', `<span class="notice"><i aria-hidden="true"></i>${esc(r.notice)}</span>`);
@@ -306,14 +314,16 @@ async function send(text) {
 
 function waitForReview() {
   setEnabled(false);
-  const w = add('typing', 'Waiting for a TeleNova specialist (Human Review)…');
+  const w = add('typing', 'Waiting for a TeleNova specialist (Human Review)… '
+    + `<a class="review-link" href="${esc(REVIEW_URL)}" target="_blank" rel="noopener"`
+    + ` title="Opens the NeuroTrust dashboard on the Human Review tab">Open Human Review ↗</a>`);
   POLL = setInterval(async () => {
     try {
       const d = await (await fetch('/api/hitl/status/' + SID)).json();
       if (d.status === 'resolved') {
         clearInterval(POLL); POLL = null; w.remove();
         bubble('nv', d.reply);
-        add('meta', `<span class="v ${d.decision === 'approved' ? 'PERMISSIVE' : 'COERCIVE'}">${esc(d.decision.toUpperCase())}</span><span class="agent">${esc(d.reviewer)}</span>`);
+        add('meta', `<span class="v ${d.decision === 'approved' ? 'PERMISSIVE' : 'COERCIVE'}">${esc(lbl(d.decision))}</span><span class="agent">${esc(d.reviewer)}</span>`);
         setEnabled(true); refreshTrail();
       }
     } catch (e) { /* keep polling */ }
@@ -326,7 +336,7 @@ async function refreshTrail() {
     const d = await (await fetch('/api/trail/' + SID)).json();
     const ev = d.events || [];
     $('#trail').innerHTML = ev.length ? ev.slice(0, 30).map(e => `<li>
-      <span class="v ${esc(e.verdict)}">${esc(e.verdict)}</span>
+      <span class="v ${esc(e.verdict)}">${esc(lbl(e.verdict))}</span>
       <span class="who2">${esc(e.agent || e.role)} <small>${esc(e.tool || e.role)}</small>${e.flagged && e.flagged.length ? `<br><span class="fl">${esc(e.flagged.join(', '))}</span>` : ''}</span>
       <span class="t">${esc((e.time || '').slice(11, 19))}</span></li>`).join('')
       : '<li class="empty">Nothing yet — ask Nova something.</li>';

@@ -70,6 +70,15 @@ nova = instrument(
     },
     privacy_config={"project_names": [], "client_names": []},
 )
+
+# Beta PAP bug (register-agents): with autoflush off, a re-registration more than
+# AGENT_RETIRE_GRACE_MIN (15) minutes after the last one marks EVERY agent retired, and
+# the app drops out of the Agent Registry. A second registration right away revives them
+# (retired rows are outside the reconcile filter). Harmless once the PAP is fixed.
+try:
+    nova._register_agents()
+except Exception as _exc:   # noqa: BLE001 — never block startup on the workaround
+    logger.warning("agent re-registration (retire workaround) failed: %s", _exc)
 logger.info("TeleNova starting — LLM provider: %s", G.LLM_SELECTION)
 
 # tool → the agent the customer sees acting (the pill chain)
@@ -177,6 +186,14 @@ def index():
     return FileResponse(str(_dir / "ui" / "index.html"), headers=_NO_CACHE)
 
 
+@app.get("/api/trust-links")
+def trust_links():
+    """Where the Trust dashboard lives (local gateway :3080, or the GCP ingress via
+    TRUST_DASHBOARD_URL). The UI shows an "Open Human Review" link on held requests."""
+    dash = os.getenv("TRUST_DASHBOARD_URL", "http://127.0.0.1:3080/ui/dashboard")
+    return {"dashboard_url": dash, "review_url": dash + ("&" if "?" in dash else "?") + "goto=hitl"}
+
+
 @app.get("/passports")
 def passports_page():
     return FileResponse(str(_dir / "ui" / "passports.html"), headers=_NO_CACHE)
@@ -186,7 +203,7 @@ def passports_page():
 def list_passports():
     from passports import PASSPORTS, summary
     return {"app_id": APP_ID, "passports": summary(), "detail": PASSPORTS,
-            "registry_url": os.getenv("TRUST_DASHBOARD_URL", "http://127.0.0.1:3004/ui/dashboard")}
+            "registry_url": os.getenv("TRUST_DASHBOARD_URL", "http://127.0.0.1:3080/ui/dashboard")}
 
 
 @app.post("/api/login")

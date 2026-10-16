@@ -379,4 +379,5 @@ def trail(session_id: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("APP_PORT", "5002")))
+    # Cloud Run sets PORT; locally run.sh uses APP_PORT / the 5002 default.
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT") or os.getenv("APP_PORT", "5002")))

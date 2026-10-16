@@ -1,0 +1,649 @@
+{
+  "pack": {
+    "id": "telecom_controls",
+    "definition": {
+      "display_name": "Telecom Controls",
+      "description": "SIM-swap, port-out, cramming, billing-accuracy, IRSF and retention-fairness controls",
+      "layer": "domain-addon",
+      "enforcement": "flexible",
+      "mode": "collect-all",
+      "combining_algorithm": "worst_case",
+      "hitl_trigger": false,
+      "owner": "telenova",
+      "version": "1.0.0",
+      "active": true,
+      "dimensions": [
+        {
+          "id": "sim_swap_auth",
+          "profile": "standard",
+          "severity": 3,
+          "abort": false,
+          "roles": [
+            "tool_call",
+            "agent_to_agent"
+          ],
+          "note": "SIM change without secure authentication"
+        },
+        {
+          "id": "account_takeover_risk",
+          "profile": "standard",
+          "severity": 2,
+          "abort": false,
+          "roles": [
+            "tool_call",
+            "agent_to_agent"
+          ],
+          "note": "SIM change with account-takeover signals"
+        },
+        {
+          "id": "port_out_velocity",
+          "profile": "standard",
+          "severity": 3,
+          "abort": false,
+          "roles": [
+            "tool_call",
+            "agent_to_agent"
+          ],
+          "note": "Port-out velocity"
+        },
+        {
+          "id": "third_party_charge_consent",
+          "profile": "standard",
+          "severity": 3,
+          "abort": false,
+          "roles": [
+            "tool_call",
+            "agent_to_agent"
+          ],
+          "note": "Third-party charge without consent"
+        },
+        {
+          "id": "credit_authority",
+          "profile": "standard",
+          "severity": 3,
+          "abort": false,
+          "roles": [
+            "tool_call",
+            "agent_to_agent"
+          ],
+          "note": "Credit above agent authority"
+        },
+        {
+          "id": "inactive_service_billing",
+          "profile": "standard",
+          "severity": 2,
+          "abort": false,
+          "roles": [
+            "tool_call",
+            "agent_to_agent"
+          ],
+          "note": "Billing for a deactivated service"
+        },
+        {
+          "id": "premium_rate_destination",
+          "profile": "standard",
+          "severity": 3,
+          "abort": false,
+          "roles": [
+            "tool_call",
+            "agent_to_agent"
+          ],
+          "note": "Call forwarding to a premium-rate range"
+        },
+        {
+          "id": "retention_offer_fairness",
+          "profile": "standard",
+          "severity": 2,
+          "abort": false,
+          "roles": [
+            "tool_call",
+            "agent_to_agent"
+          ],
+          "note": "Retention offer keyed on a proxy attribute"
+        }
+      ],
+      "context_adjustments": []
+    }
+  },
+  "app_id": "telenova",
+  "rules": [
+    {
+      "dimension_id": "sim_swap_auth",
+      "display_name": "SIM change without secure authentication",
+      "category": "custom",
+      "roles": [
+        "tool_call",
+        "agent_to_agent"
+      ],
+      "rule": {
+        "rule_id": "sim_swap_auth_v1",
+        "dimension": "sim_swap_auth",
+        "hit_policy": "F",
+        "columns": [
+          {
+            "field": "content.text",
+            "type": "string"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "content.text": {
+                "op": "regex",
+                "value": {
+                  "pattern": "'secure_auth': False",
+                  "case_sensitive": true
+                }
+              }
+            },
+            "score": 8,
+            "reason": "SIM change requested without secure authentication (FCC 2023 SIM-swap rules)"
+          }
+        ],
+        "otherwise": {
+          "score": 1,
+          "reason": "not applicable"
+        }
+      }
+    },
+    {
+      "dimension_id": "account_takeover_risk",
+      "display_name": "SIM change with account-takeover signals",
+      "category": "custom",
+      "roles": [
+        "tool_call",
+        "agent_to_agent"
+      ],
+      "rule": {
+        "rule_id": "account_takeover_risk_v1",
+        "dimension": "account_takeover_risk",
+        "hit_policy": "F",
+        "columns": [
+          {
+            "field": "content.text",
+            "type": "string"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "content.text": {
+                "op": "regex",
+                "value": {
+                  "pattern": "'takeover_risk': 'high'",
+                  "case_sensitive": true
+                }
+              }
+            },
+            "score": 5,
+            "reason": "SIM change with account-takeover signals: hold for the fraud desk"
+          }
+        ],
+        "otherwise": {
+          "score": 1,
+          "reason": "not applicable"
+        }
+      }
+    },
+    {
+      "dimension_id": "port_out_velocity",
+      "display_name": "Port-out velocity",
+      "category": "custom",
+      "roles": [
+        "tool_call",
+        "agent_to_agent"
+      ],
+      "rule": {
+        "rule_id": "port_out_velocity_v1",
+        "dimension": "port_out_velocity",
+        "hit_policy": "F",
+        "columns": [
+          {
+            "field": "content.text",
+            "type": "string"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "content.text": {
+                "op": "regex",
+                "value": {
+                  "pattern": "'port_requests_24h': ([3-9]|[1-9]\\d+)(?!\\d)",
+                  "case_sensitive": true
+                }
+              }
+            },
+            "score": 8,
+            "reason": "Three or more port-out requests in 24 hours"
+          }
+        ],
+        "otherwise": {
+          "score": 1,
+          "reason": "not applicable"
+        }
+      }
+    },
+    {
+      "dimension_id": "third_party_charge_consent",
+      "display_name": "Third-party charge without consent",
+      "category": "custom",
+      "roles": [
+        "tool_call",
+        "agent_to_agent"
+      ],
+      "rule": {
+        "rule_id": "third_party_charge_consent_v1",
+        "dimension": "third_party_charge_consent",
+        "hit_policy": "F",
+        "columns": [
+          {
+            "field": "content.text",
+            "type": "string"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "content.text": {
+                "op": "regex",
+                "value": {
+                  "pattern": "'third_party_consent': False",
+                  "case_sensitive": true
+                }
+              }
+            },
+            "score": 8,
+            "reason": "Third-party charge without the customer's explicit consent (cramming)"
+          }
+        ],
+        "otherwise": {
+          "score": 1,
+          "reason": "not applicable"
+        }
+      }
+    },
+    {
+      "dimension_id": "credit_authority",
+      "display_name": "Credit above agent authority",
+      "category": "custom",
+      "roles": [
+        "tool_call",
+        "agent_to_agent"
+      ],
+      "rule": {
+        "rule_id": "credit_authority_v1",
+        "dimension": "credit_authority",
+        "hit_policy": "F",
+        "columns": [
+          {
+            "field": "content.text",
+            "type": "string"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "content.text": {
+                "op": "regex",
+                "value": {
+                  "pattern": "'credit_amount': (5[1-9]|[6-9]\\d|\\d{3,})(\\.\\d+)?(?!\\d)",
+                  "case_sensitive": true
+                }
+              }
+            },
+            "score": 8,
+            "reason": "Bill credit above the agent's $50 authority"
+          }
+        ],
+        "otherwise": {
+          "score": 1,
+          "reason": "not applicable"
+        }
+      }
+    },
+    {
+      "dimension_id": "inactive_service_billing",
+      "display_name": "Billing for a deactivated service",
+      "category": "custom",
+      "roles": [
+        "tool_call",
+        "agent_to_agent"
+      ],
+      "rule": {
+        "rule_id": "inactive_service_billing_v1",
+        "dimension": "inactive_service_billing",
+        "hit_policy": "F",
+        "columns": [
+          {
+            "field": "content.text",
+            "type": "string"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "content.text": {
+                "op": "regex",
+                "value": {
+                  "pattern": "'service_status': 'deactivated'",
+                  "case_sensitive": true
+                }
+              }
+            },
+            "score": 5,
+            "reason": "Refund for a service billed after deactivation: billing-desk check"
+          }
+        ],
+        "otherwise": {
+          "score": 1,
+          "reason": "not applicable"
+        }
+      }
+    },
+    {
+      "dimension_id": "premium_rate_destination",
+      "display_name": "Call forwarding to a premium-rate range",
+      "category": "custom",
+      "roles": [
+        "tool_call",
+        "agent_to_agent"
+      ],
+      "rule": {
+        "rule_id": "premium_rate_destination_v1",
+        "dimension": "premium_rate_destination",
+        "hit_policy": "F",
+        "columns": [
+          {
+            "field": "content.text",
+            "type": "string"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "content.text": {
+                "op": "regex",
+                "value": {
+                  "pattern": "'forward_to': '\\+88[1-3]",
+                  "case_sensitive": true
+                }
+              }
+            },
+            "score": 8,
+            "reason": "Forwarding to an international premium range used in revenue-share fraud"
+          }
+        ],
+        "otherwise": {
+          "score": 1,
+          "reason": "not applicable"
+        }
+      }
+    },
+    {
+      "dimension_id": "retention_offer_fairness",
+      "display_name": "Retention offer keyed on a proxy attribute",
+      "category": "custom",
+      "roles": [
+        "tool_call",
+        "agent_to_agent"
+      ],
+      "rule": {
+        "rule_id": "retention_offer_fairness_v1",
+        "dimension": "retention_offer_fairness",
+        "hit_policy": "F",
+        "columns": [
+          {
+            "field": "content.text",
+            "type": "string"
+          }
+        ],
+        "rows": [
+          {
+            "cells": {
+              "content.text": {
+                "op": "regex",
+                "value": {
+                  "pattern": "'offer_basis': 'postcode_segment'",
+                  "case_sensitive": true
+                }
+              }
+            },
+            "score": 5,
+            "reason": "Retention offer personalised on a postcode segment (proxy attribute)"
+          }
+        ],
+        "otherwise": {
+          "score": 1,
+          "reason": "not applicable"
+        }
+      }
+    }
+  ],
+  "policies": [
+    {
+      "dimension": "sim_swap_auth",
+      "app_id": "telenova",
+      "severity": 3,
+      "thresholds": {
+        "permissive": [
+          1,
+          3
+        ],
+        "normative": [
+          4,
+          6
+        ],
+        "coercive": [
+          7,
+          9
+        ]
+      },
+      "remediation_normative": "SIM change requested without secure authentication (FCC 2023 SIM-swap rules)",
+      "remediation_coercive": "SIM change requested without secure authentication (FCC 2023 SIM-swap rules)",
+      "policy_code": "TN-SIM_SWAP_AUTH",
+      "normative_action": "REVISION",
+      "normative_guidance": "SIM change requested without secure authentication (FCC 2023 SIM-swap rules)",
+      "human_note": "SIM change requested without secure authentication (FCC 2023 SIM-swap rules)",
+      "ops_alert": true,
+      "hitl_trigger": false,
+      "incident_routing": "platform_dashboard"
+    },
+    {
+      "dimension": "account_takeover_risk",
+      "app_id": "telenova",
+      "severity": 2,
+      "thresholds": {
+        "permissive": [
+          1,
+          3
+        ],
+        "normative": [
+          4,
+          9
+        ],
+        "coercive": [
+          10,
+          10
+        ]
+      },
+      "remediation_normative": "SIM change with account-takeover signals: hold for the fraud desk",
+      "remediation_coercive": null,
+      "policy_code": "TN-ACCOUNT_TAKEOVER_",
+      "normative_action": "HITL",
+      "normative_guidance": "SIM change with account-takeover signals: hold for the fraud desk",
+      "human_note": "SIM change with account-takeover signals: hold for the fraud desk",
+      "ops_alert": false,
+      "hitl_trigger": true,
+      "incident_routing": "platform_dashboard"
+    },
+    {
+      "dimension": "port_out_velocity",
+      "app_id": "telenova",
+      "severity": 3,
+      "thresholds": {
+        "permissive": [
+          1,
+          3
+        ],
+        "normative": [
+          4,
+          6
+        ],
+        "coercive": [
+          7,
+          9
+        ]
+      },
+      "remediation_normative": "Three or more port-out requests in 24 hours",
+      "remediation_coercive": "Three or more port-out requests in 24 hours",
+      "policy_code": "TN-PORT_OUT_VELOCITY",
+      "normative_action": "REVISION",
+      "normative_guidance": "Three or more port-out requests in 24 hours",
+      "human_note": "Three or more port-out requests in 24 hours",
+      "ops_alert": true,
+      "hitl_trigger": false,
+      "incident_routing": "platform_dashboard"
+    },
+    {
+      "dimension": "third_party_charge_consent",
+      "app_id": "telenova",
+      "severity": 3,
+      "thresholds": {
+        "permissive": [
+          1,
+          3
+        ],
+        "normative": [
+          4,
+          6
+        ],
+        "coercive": [
+          7,
+          9
+        ]
+      },
+      "remediation_normative": "Third-party charge without the customer's explicit consent (cramming)",
+      "remediation_coercive": "Third-party charge without the customer's explicit consent (cramming)",
+      "policy_code": "TN-THIRD_PARTY_CHARG",
+      "normative_action": "REVISION",
+      "normative_guidance": "Third-party charge without the customer's explicit consent (cramming)",
+      "human_note": "Third-party charge without the customer's explicit consent (cramming)",
+      "ops_alert": true,
+      "hitl_trigger": false,
+      "incident_routing": "platform_dashboard"
+    },
+    {
+      "dimension": "credit_authority",
+      "app_id": "telenova",
+      "severity": 3,
+      "thresholds": {
+        "permissive": [
+          1,
+          3
+        ],
+        "normative": [
+          4,
+          6
+        ],
+        "coercive": [
+          7,
+          9
+        ]
+      },
+      "remediation_normative": "Bill credit above the agent's $50 authority",
+      "remediation_coercive": "Bill credit above the agent's $50 authority",
+      "policy_code": "TN-CREDIT_AUTHORITY",
+      "normative_action": "REVISION",
+      "normative_guidance": "Bill credit above the agent's $50 authority",
+      "human_note": "Bill credit above the agent's $50 authority",
+      "ops_alert": true,
+      "hitl_trigger": false,
+      "incident_routing": "platform_dashboard"
+    },
+    {
+      "dimension": "inactive_service_billing",
+      "app_id": "telenova",
+      "severity": 2,
+      "thresholds": {
+        "permissive": [
+          1,
+          3
+        ],
+        "normative": [
+          4,
+          9
+        ],
+        "coercive": [
+          10,
+          10
+        ]
+      },
+      "remediation_normative": "Refund for a service billed after deactivation: billing-desk check",
+      "remediation_coercive": null,
+      "policy_code": "TN-INACTIVE_SERVICE_",
+      "normative_action": "HITL",
+      "normative_guidance": "Refund for a service billed after deactivation: billing-desk check",
+      "human_note": "Refund for a service billed after deactivation: billing-desk check",
+      "ops_alert": false,
+      "hitl_trigger": true,
+      "incident_routing": "platform_dashboard"
+    },
+    {
+      "dimension": "premium_rate_destination",
+      "app_id": "telenova",
+      "severity": 3,
+      "thresholds": {
+        "permissive": [
+          1,
+          3
+        ],
+        "normative": [
+          4,
+          6
+        ],
+        "coercive": [
+          7,
+          9
+        ]
+      },
+      "remediation_normative": "Forwarding to an international premium range used in revenue-share fraud",
+      "remediation_coercive": "Forwarding to an international premium range used in revenue-share fraud",
+      "policy_code": "TN-PREMIUM_RATE_DEST",
+      "normative_action": "REVISION",
+      "normative_guidance": "Forwarding to an international premium range used in revenue-share fraud",
+      "human_note": "Forwarding to an international premium range used in revenue-share fraud",
+      "ops_alert": true,
+      "hitl_trigger": false,
+      "incident_routing": "platform_dashboard"
+    },
+    {
+      "dimension": "retention_offer_fairness",
+      "app_id": "telenova",
+      "severity": 2,
+      "thresholds": {
+        "permissive": [
+          1,
+          3
+        ],
+        "normative": [
+          4,
+          9
+        ],
+        "coercive": [
+          10,
+          10
+        ]
+      },
+      "remediation_normative": "Retention offer personalised on a postcode segment (proxy attribute)",
+      "remediation_coercive": null,
+      "policy_code": "TN-RETENTION_OFFER_F",
+      "normative_action": "REVISION",
+      "normative_guidance": "Retention offer personalised on a postcode segment (proxy attribute)",
+      "human_note": "Retention offer personalised on a postcode segment (proxy attribute)",
+      "ops_alert": false,
+      "hitl_trigger": false,
+      "incident_routing": "platform_dashboard"
+    }
+  ]
+}
